@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "pagerduty",
   "type": "provider",
-  "version": "v1.4.0",
+  "version": "v1.5.1",
   "provider": {
     "skip_credentials_validation": {
       "Type": "Bool",
@@ -106,7 +106,7 @@
       },
       "catch_all": {
         "Type": "Bool",
-        "Optional": true
+        "Computed": true
       },
       "condition_json": {
         "Type": "String",
@@ -133,6 +133,10 @@
       "extension_schema": {
         "Type": "String",
         "Required": true
+      },
+      "html_url": {
+        "Type": "String",
+        "Computed": true
       },
       "name": {
         "Type": "String",
@@ -310,6 +314,10 @@
       "escalation_policy": {
         "Type": "String",
         "Required": true
+      },
+      "html_url": {
+        "Type": "String",
+        "Computed": true
       },
       "incident_urgency_rule": {
         "Type": "List",
@@ -506,12 +514,24 @@
           "Value": "Managed by Terraform"
         }
       },
+      "html_url": {
+        "Type": "String",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Required": true
       }
     },
     "pagerduty_team_membership": {
+      "role": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "manager"
+        }
+      },
       "team_id": {
         "Type": "String",
         "Required": true
@@ -613,6 +633,28 @@
         }
       },
       "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "pagerduty_user_notification_rule": {
+      "contact_method": {
+        "Type": "Map",
+        "Required": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "start_delay_in_minutes": {
+        "Type": "Int",
+        "Required": true
+      },
+      "urgency": {
         "Type": "String",
         "Required": true
       },

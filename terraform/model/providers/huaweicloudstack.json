@@ -1,17 +1,18 @@
 {
   ".schema_version": "1",
-  "name": "telefonicaopencloud",
+  "name": "huaweicloudstack",
   "type": "provider",
-  "version": "v1.0.0",
+  "version": "v1.1.0",
   "provider": {
     "access_key": {
       "Type": "String",
       "Optional": true,
+      "Description": "The access key for API operations. You can retrieve this\nfrom the 'My Credential' section of the console.",
       "DefaultFunc": "ENV(OS_ACCESS_KEY)"
     },
     "auth_url": {
       "Type": "String",
-      "Optional": true,
+      "Required": true,
       "Description": "The Identity authentication URL.",
       "DefaultFunc": "ENV(OS_AUTH_URL)"
     },
@@ -26,12 +27,6 @@
       "Optional": true,
       "Description": "A client certificate to authenticate with.",
       "DefaultFunc": "ENV(OS_CERT)"
-    },
-    "cloud": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "An entry in a `clouds.yaml` file to use.",
-      "DefaultFunc": "ENV(OS_CLOUD)"
     },
     "domain_id": {
       "Type": "String",
@@ -71,19 +66,14 @@
     "region": {
       "Type": "String",
       "Optional": true,
-      "Description": "The TelefonicaOpenCloud region to connect to.",
+      "Description": "The HuaweiCloudStack region to connect to.",
       "DefaultFunc": "ENV(OS_REGION_NAME)"
     },
     "secret_key": {
       "Type": "String",
       "Optional": true,
+      "Description": "The secret key for API operations. You can retrieve this\nfrom the 'My Credential' section of the console.",
       "DefaultFunc": "ENV(OS_SECRET_KEY)"
-    },
-    "swauth": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Use Swift's authentication system instead of Keystone. Only used for\ninteraction with Swift.",
-      "DefaultFunc": "ENV(OS_SWAUTH)"
     },
     "tenant_id": {
       "Type": "String",
@@ -103,12 +93,6 @@
       "Description": "Authentication token to use as an alternative to username/password.",
       "DefaultFunc": "ENV(OS_AUTH_TOKEN)"
     },
-    "use_octavia": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "If set to `true`, API requests will go the Load Balancer\nservice (Octavia) instead of the Networking service (Neutron).",
-      "DefaultFunc": "ENV(OS_USE_OCTAVIA)"
-    },
     "user_id": {
       "Type": "String",
       "Optional": true,
@@ -123,17 +107,19 @@
     }
   },
   "resources": {
-    "telefonicaopencloud_as_configuration_v1": {
+    "huaweicloudstack_as_configuration_v1": {
       "instance_config": {
         "Type": "List",
         "Required": true,
         "MaxItems": 1,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "disk": {
               "Type": "List",
               "Optional": true,
+              "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -155,9 +141,7 @@
             "flavor": {
               "Type": "String",
               "Optional": true,
-              "Default": {
-                "Type": "string"
-              }
+              "DefaultFunc": "ENV(OS_FLAVOR_ID)"
             },
             "image": {
               "Type": "String",
@@ -173,12 +157,17 @@
             },
             "metadata": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "personality": {
               "Type": "List",
               "Optional": true,
               "MaxItems": 5,
+              "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -197,6 +186,7 @@
               "Type": "List",
               "Optional": true,
               "MaxItems": 1,
+              "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -204,6 +194,7 @@
                     "Type": "List",
                     "Required": true,
                     "MaxItems": 1,
+                    "IsBlock": true,
                     "Elem": {
                       "Type": "SchemaInfo",
                       "Info": {
@@ -211,6 +202,7 @@
                           "Type": "List",
                           "Required": true,
                           "MaxItems": 1,
+                          "IsBlock": true,
                           "Elem": {
                             "Type": "SchemaInfo",
                             "Info": {
@@ -256,7 +248,7 @@
         "Required": true
       }
     },
-    "telefonicaopencloud_as_group_v1": {
+    "huaweicloudstack_as_group_v1": {
       "__timeouts__": [
         "create",
         "delete"
@@ -277,6 +269,11 @@
           "Type": "int",
           "Value": "900"
         }
+      },
+      "current_instance_number": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
       },
       "delete_instances": {
         "Type": "String",
@@ -336,7 +333,41 @@
       "lb_listener_id": {
         "Type": "String",
         "Optional": true,
-        "Description": "The system supports the binding of up to three ELB listeners, the IDs of which are separated using a comma."
+        "Description": "The system supports the binding of up to three ELB listeners, the IDs of which are separated using a comma.",
+        "ConflictsWith": [
+          "lbaas_listeners"
+        ],
+        "Deprecated": "Use lbaas_listeners instead"
+      },
+      "lbaas_listeners": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 3,
+        "ConflictsWith": [
+          "lb_listener_id"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "listener_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "protocol_port": {
+              "Type": "Int",
+              "Required": true
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            }
+          }
+        }
       },
       "max_instance_number": {
         "Type": "Int",
@@ -358,6 +389,7 @@
         "Type": "List",
         "Required": true,
         "MaxItems": 5,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -390,9 +422,15 @@
         "Type": "String",
         "Required": true
       },
+      "scaling_group_status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
       "security_groups": {
         "Type": "List",
         "Required": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -408,7 +446,7 @@
         "Required": true
       }
     },
-    "telefonicaopencloud_as_policy_v1": {
+    "huaweicloudstack_as_policy_v1": {
       "alarm_id": {
         "Type": "String",
         "Optional": true
@@ -434,6 +472,7 @@
         "Type": "List",
         "Optional": true,
         "MaxItems": 1,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -464,6 +503,7 @@
         "Type": "List",
         "Optional": true,
         "MaxItems": 1,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -488,14 +528,14 @@
               "Optional": true,
               "Default": {
                 "Type": "string",
-                "Value": "2019-07-31T07:59Z"
+                "Value": "2020-03-26T10:15Z"
               }
             }
           }
         }
       }
     },
-    "telefonicaopencloud_blockstorage_volume_v2": {
+    "huaweicloudstack_blockstorage_volume_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -526,6 +566,14 @@
         "Optional": true,
         "Computed": true
       },
+      "cascade": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "consistency_group_id": {
         "Type": "String",
         "Optional": true
@@ -541,7 +589,11 @@
       "metadata": {
         "Type": "Map",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "name": {
         "Type": "String",
@@ -574,184 +626,7 @@
         "Computed": true
       }
     },
-    "telefonicaopencloud_ces_alarmrule": {
-      "__timeouts__": [
-        "create",
-        "update",
-        "delete"
-      ],
-      "alarm_action_enabled": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
-        }
-      },
-      "alarm_actions": {
-        "Type": "List",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "notification_list": {
-              "Type": "List",
-              "Required": true,
-              "MaxItems": 5,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
-      "alarm_description": {
-        "Type": "String",
-        "Optional": true
-      },
-      "alarm_enabled": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
-        }
-      },
-      "alarm_name": {
-        "Type": "String",
-        "Required": true
-      },
-      "alarm_state": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "condition": {
-        "Type": "List",
-        "Required": true,
-        "MaxItems": 1,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "comparison_operator": {
-              "Type": "String",
-              "Required": true
-            },
-            "count": {
-              "Type": "Int",
-              "Required": true
-            },
-            "filter": {
-              "Type": "String",
-              "Required": true
-            },
-            "period": {
-              "Type": "Int",
-              "Required": true
-            },
-            "unit": {
-              "Type": "String",
-              "Optional": true
-            },
-            "value": {
-              "Type": "Int",
-              "Required": true
-            }
-          }
-        }
-      },
-      "insufficientdata_actions": {
-        "Type": "List",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "notification_list": {
-              "Type": "List",
-              "Required": true,
-              "MaxItems": 5,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
-      "metric": {
-        "Type": "List",
-        "Required": true,
-        "MaxItems": 1,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "dimensions": {
-              "Type": "List",
-              "Required": true,
-              "MaxItems": 3,
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "name": {
-                    "Type": "String",
-                    "Required": true
-                  },
-                  "value": {
-                    "Type": "String",
-                    "Required": true
-                  }
-                }
-              }
-            },
-            "metric_name": {
-              "Type": "String",
-              "Required": true
-            },
-            "namespace": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
-      "ok_actions": {
-        "Type": "List",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "notification_list": {
-              "Type": "List",
-              "Required": true,
-              "MaxItems": 5,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
-      "update_time": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      }
-    },
-    "telefonicaopencloud_compute_floatingip_associate_v2": {
+    "huaweicloudstack_compute_floatingip_associate_v2": {
       "fixed_ip": {
         "Type": "String",
         "Optional": true
@@ -770,31 +645,7 @@
         "Computed": true
       }
     },
-    "telefonicaopencloud_compute_floatingip_v2": {
-      "address": {
-        "Type": "String",
-        "Computed": true
-      },
-      "fixed_ip": {
-        "Type": "String",
-        "Computed": true
-      },
-      "instance_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "pool": {
-        "Type": "String",
-        "Required": true,
-        "DefaultFunc": "ENV(OS_POOL_NAME)"
-      },
-      "region": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      }
-    },
-    "telefonicaopencloud_compute_instance_v2": {
+    "huaweicloudstack_compute_instance_v2": {
       "__timeouts__": [
         "create",
         "update",
@@ -816,7 +667,11 @@
       },
       "all_metadata": {
         "Type": "Map",
-        "Computed": true
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "availability_zone": {
         "Type": "String",
@@ -826,6 +681,7 @@
       "block_device": {
         "Type": "List",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -845,6 +701,10 @@
               "Type": "String",
               "Optional": true
             },
+            "device_name": {
+              "Type": "String",
+              "Optional": true
+            },
             "guest_format": {
               "Type": "String",
               "Optional": true
@@ -859,6 +719,10 @@
             },
             "volume_size": {
               "Type": "Int",
+              "Optional": true
+            },
+            "volume_type": {
+              "Type": "String",
               "Optional": true
             }
           }
@@ -883,7 +747,7 @@
       "floating_ip": {
         "Type": "String",
         "Optional": true,
-        "Removed": "Use the telefonicaopencloud_compute_floatingip_associate_v2 resource instead"
+        "Removed": "Use the huaweicloudstack_compute_floatingip_associate_v2 resource instead"
       },
       "image_id": {
         "Type": "String",
@@ -901,7 +765,11 @@
       },
       "metadata": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "name": {
         "Type": "String",
@@ -911,6 +779,7 @@
         "Type": "List",
         "Optional": true,
         "Computed": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -936,7 +805,7 @@
               "Type": "String",
               "Optional": true,
               "Computed": true,
-              "Removed": "Use the telefonicaopencloud_compute_floatingip_associate_v2 resource instead"
+              "Removed": "Use the huaweicloudstack_compute_floatingip_associate_v2 resource instead"
             },
             "mac": {
               "Type": "String",
@@ -963,6 +832,7 @@
       "personality": {
         "Type": "Set",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -985,6 +855,7 @@
       "scheduler_hints": {
         "Type": "Set",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1051,7 +922,8 @@
       "volume": {
         "Type": "Set",
         "Optional": true,
-        "Removed": "Use block_device or telefonicaopencloud_compute_volume_attach_v2 instead",
+        "Removed": "Use block_device or huaweicloudstack_compute_volume_attach_v2 instead",
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1073,7 +945,42 @@
         }
       }
     },
-    "telefonicaopencloud_compute_keypair_v2": {
+    "huaweicloudstack_compute_interface_attach_v2": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "fixed_ip": {
+        "Type": "String",
+        "Optional": true
+      },
+      "instance_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "port_id"
+        ]
+      },
+      "port_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "network_id"
+        ]
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "huaweicloudstack_compute_keypair_v2": {
       "name": {
         "Type": "String",
         "Required": true
@@ -1086,73 +993,9 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_compute_secgroup_v2": {
-      "__timeouts__": [
-        "delete"
-      ],
-      "description": {
-        "Type": "String",
-        "Required": true
-      },
-      "name": {
-        "Type": "String",
-        "Required": true
-      },
-      "region": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "rule": {
-        "Type": "Set",
-        "Optional": true,
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "cidr": {
-              "Type": "String",
-              "Optional": true
-            },
-            "from_group_id": {
-              "Type": "String",
-              "Optional": true
-            },
-            "from_port": {
-              "Type": "Int",
-              "Required": true
-            },
-            "id": {
-              "Type": "String",
-              "Computed": true
-            },
-            "ip_protocol": {
-              "Type": "String",
-              "Required": true
-            },
-            "self": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
-            "to_port": {
-              "Type": "Int",
-              "Required": true
-            }
-          }
-        }
-      }
-    },
-    "telefonicaopencloud_compute_servergroup_v2": {
+    "huaweicloudstack_compute_servergroup_v2": {
       "members": {
         "Type": "List",
         "Computed": true,
@@ -1177,13 +1020,9 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_compute_volume_attach_v2": {
+    "huaweicloudstack_compute_volume_attach_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -1207,79 +1046,33 @@
         "Required": true
       }
     },
-    "telefonicaopencloud_dns_recordset_v2": {
+    "huaweicloudstack_lb_certificate_v2": {
       "__timeouts__": [
         "create",
         "update",
         "delete"
       ],
-      "description": {
-        "Type": "String",
-        "Optional": true
-      },
-      "name": {
+      "certificate": {
         "Type": "String",
         "Required": true
       },
-      "records": {
-        "Type": "List",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
-      },
-      "region": {
+      "create_time": {
         "Type": "String",
-        "Optional": true,
         "Computed": true
-      },
-      "ttl": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "type": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
-      },
-      "zone_id": {
-        "Type": "String",
-        "Required": true
-      }
-    },
-    "telefonicaopencloud_dns_zone_v2": {
-      "__timeouts__": [
-        "create",
-        "update",
-        "delete"
-      ],
-      "attributes": {
-        "Type": "Map",
-        "Optional": true
       },
       "description": {
         "Type": "String",
         "Optional": true
       },
-      "email": {
+      "domain": {
         "Type": "String",
         "Optional": true
       },
-      "masters": {
-        "Type": "Set",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
-      },
       "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "private_key": {
         "Type": "String",
         "Required": true
       },
@@ -1288,132 +1081,63 @@
         "Optional": true,
         "Computed": true
       },
-      "ttl": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "type": {
+      "update_time": {
         "Type": "String",
-        "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_elb_backendecs": {
+    "huaweicloudstack_lb_l7policy_v2": {
       "__timeouts__": [
         "create",
         "update",
         "delete"
       ],
-      "create_time": {
+      "action": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
-      "health_status": {
-        "Type": "String",
-        "Computed": true
-      },
-      "listener_id": {
-        "Type": "String",
-        "Required": true
-      },
-      "listeners": {
-        "Type": "List",
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "id": {
-              "Type": "String",
-              "Computed": true
-            }
-          }
+      "admin_state_up": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
         }
       },
-      "private_address": {
+      "description": {
         "Type": "String",
-        "Required": true
-      },
-      "public_address": {
-        "Type": "String",
-        "Computed": true
-      },
-      "server_id": {
-        "Type": "String",
-        "Required": true
-      },
-      "server_name": {
-        "Type": "String",
-        "Computed": true
-      },
-      "status": {
-        "Type": "String",
-        "Computed": true
-      },
-      "update_time": {
-        "Type": "String",
-        "Computed": true
-      }
-    },
-    "telefonicaopencloud_elb_healthcheck": {
-      "__timeouts__": [
-        "create",
-        "update",
-        "delete"
-      ],
-      "create_time": {
-        "Type": "String",
-        "Computed": true
-      },
-      "healthcheck_connect_port": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "healthcheck_interval": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "healthcheck_protocol": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "healthcheck_timeout": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "healthcheck_uri": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "healthy_threshold": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
+        "Optional": true
       },
       "listener_id": {
         "Type": "String",
         "Required": true
       },
-      "unhealthy_threshold": {
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "position": {
         "Type": "Int",
         "Optional": true,
         "Computed": true
       },
-      "update_time": {
+      "redirect_pool_id": {
         "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
       }
     },
-    "telefonicaopencloud_elb_listener": {
+    "huaweicloudstack_lb_l7rule_v2": {
       "__timeouts__": [
         "create",
         "update",
@@ -1421,187 +1145,142 @@
       ],
       "admin_state_up": {
         "Type": "Bool",
-        "Computed": true
-      },
-      "backend_port": {
-        "Type": "Int",
-        "Required": true
-      },
-      "backend_protocol": {
-        "Type": "String",
-        "Required": true
-      },
-      "certificate_id": {
-        "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "certificates": {
-        "Type": "List",
-        "Optional": true,
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
         }
       },
-      "cookie_timeout": {
+      "compare_type": {
+        "Type": "String",
+        "Required": true
+      },
+      "key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "l7policy_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "listener_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "value": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "huaweicloudstack_lb_listener_v2": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "admin_state_up": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "connection_limit": {
         "Type": "Int",
         "Optional": true,
         "Computed": true
       },
-      "create_time": {
+      "default_pool_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
+      },
+      "default_tls_container_ref": {
+        "Type": "String",
+        "Optional": true
       },
       "description": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "healthcheck_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "lb_algorithm": {
-        "Type": "String",
-        "Required": true
+        "Optional": true
       },
       "loadbalancer_id": {
         "Type": "String",
         "Required": true
       },
-      "member_number": {
-        "Type": "Int",
-        "Computed": true
-      },
       "name": {
         "Type": "String",
-        "Required": true
-      },
-      "port": {
-        "Type": "Int",
-        "Required": true
+        "Optional": true,
+        "Computed": true
       },
       "protocol": {
         "Type": "String",
         "Required": true
       },
-      "session_sticky": {
-        "Type": "Bool",
-        "Optional": true,
-        "Computed": true
-      },
-      "ssl_ciphers": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "ssl_protocols": {
-        "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "TLSv1.2"
-        }
-      },
-      "status": {
-        "Type": "String",
-        "Computed": true
-      },
-      "sticky_session_type": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "tcp_draining": {
-        "Type": "Bool",
-        "Optional": true,
-        "Computed": true
-      },
-      "tcp_draining_timeout": {
+      "protocol_port": {
         "Type": "Int",
-        "Optional": true,
-        "Computed": true
+        "Required": true
       },
-      "tcp_timeout": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "udp_timeout": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "update_time": {
+      "region": {
         "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
       }
     },
-    "telefonicaopencloud_elb_loadbalancer": {
+    "huaweicloudstack_lb_loadbalancer_v2": {
       "__timeouts__": [
         "create",
         "update",
         "delete"
       ],
       "admin_state_up": {
-        "Type": "Int",
-        "Required": true
-      },
-      "az": {
-        "Type": "String",
-        "Optional": true
-      },
-      "bandwidth": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "charge_mode": {
-        "Type": "String",
+        "Type": "Bool",
         "Optional": true,
         "Default": {
-          "Type": "string",
-          "Value": "bandwidth"
+          "Type": "bool",
+          "Value": "true"
         }
-      },
-      "create_time": {
-        "Type": "String",
-        "Computed": true
       },
       "description": {
         "Type": "String",
+        "Optional": true
+      },
+      "loadbalancer_provider": {
+        "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "eip_type": {
-        "Type": "String",
-        "Optional": true
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Optional": true
       },
-      "security_group_id": {
+      "region": {
         "Type": "String",
         "Optional": true,
         "Computed": true
       },
-      "status": {
+      "tenant_id": {
         "Type": "String",
-        "Computed": true
-      },
-      "tenantid": {
-        "Type": "String",
-        "Optional": true
-      },
-      "type": {
-        "Type": "String",
-        "Required": true
-      },
-      "update_time": {
-        "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "vip_address": {
@@ -1609,17 +1288,236 @@
         "Optional": true,
         "Computed": true
       },
-      "vip_subnet_id": {
+      "vip_port_id": {
         "Type": "String",
-        "Optional": true,
         "Computed": true
       },
-      "vpc_id": {
+      "vip_subnet_id": {
         "Type": "String",
         "Required": true
       }
     },
-    "telefonicaopencloud_networking_floatingip_v2": {
+    "huaweicloudstack_lb_member_v2": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "address": {
+        "Type": "String",
+        "Required": true
+      },
+      "admin_state_up": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "pool_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "protocol_port": {
+        "Type": "Int",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "subnet_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "weight": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "huaweicloudstack_lb_monitor_v2": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "admin_state_up": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "delay": {
+        "Type": "Int",
+        "Required": true
+      },
+      "expected_codes": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "http_method": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "max_retries": {
+        "Type": "Int",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "pool_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "timeout": {
+        "Type": "Int",
+        "Required": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "url_path": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "huaweicloudstack_lb_pool_v2": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "admin_state_up": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "lb_method": {
+        "Type": "String",
+        "Required": true
+      },
+      "listener_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "loadbalancer_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "persistence": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cookie_name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "type": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "huaweicloudstack_lb_whitelist_v2": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "enable_whitelist": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "whitelist": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "huaweicloudstack_networking_floatingip_associate_v2": {
+      "floating_ip": {
+        "Type": "String",
+        "Required": true
+      },
+      "port_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "huaweicloudstack_networking_floatingip_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -1652,13 +1550,9 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_networking_network_v2": {
+    "huaweicloudstack_networking_network_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -1680,6 +1574,7 @@
       "segments": {
         "Type": "List",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1707,13 +1602,9 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_networking_port_v2": {
+    "huaweicloudstack_networking_port_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -1742,6 +1633,8 @@
       "allowed_address_pairs": {
         "Type": "Set",
         "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1770,6 +1663,7 @@
       "fixed_ip": {
         "Type": "List",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1809,6 +1703,7 @@
       "security_group_ids": {
         "Type": "Set",
         "Optional": true,
+        "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1818,13 +1713,9 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_networking_router_interface_v2": {
+    "huaweicloudstack_networking_router_interface_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -1849,7 +1740,7 @@
         "Computed": true
       }
     },
-    "telefonicaopencloud_networking_router_route_v2": {
+    "huaweicloudstack_networking_router_route_v2": {
       "destination_cidr": {
         "Type": "String",
         "Required": true
@@ -1868,7 +1759,7 @@
         "Required": true
       }
     },
-    "telefonicaopencloud_networking_router_v2": {
+    "huaweicloudstack_networking_router_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -1888,40 +1779,10 @@
         "Optional": true,
         "Computed": true
       },
-      "external_fixed_ip": {
-        "Type": "List",
-        "Optional": true,
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "ip_address": {
-              "Type": "String",
-              "Optional": true
-            },
-            "subnet_id": {
-              "Type": "String",
-              "Optional": true
-            }
-          }
-        }
-      },
-      "external_gateway": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "external_network_id"
-        ],
-        "Deprecated": "use external_network_id instead"
-      },
       "external_network_id": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "external_gateway"
-        ]
+        "Computed": true
       },
       "name": {
         "Type": "String",
@@ -1936,13 +1797,9 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_networking_secgroup_rule_v2": {
+    "huaweicloudstack_networking_secgroup_rule_v2": {
       "__timeouts__": [
         "delete"
       ],
@@ -1994,7 +1851,7 @@
         "Computed": true
       }
     },
-    "telefonicaopencloud_networking_secgroup_v2": {
+    "huaweicloudstack_networking_secgroup_v2": {
       "__timeouts__": [
         "delete"
       ],
@@ -2022,7 +1879,7 @@
         "Computed": true
       }
     },
-    "telefonicaopencloud_networking_subnet_v2": {
+    "huaweicloudstack_networking_subnet_v2": {
       "__timeouts__": [
         "create",
         "delete"
@@ -2031,6 +1888,7 @@
         "Type": "List",
         "Optional": true,
         "Computed": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -2068,14 +1926,12 @@
       "gateway_ip": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "no_gateway"
-        ]
+        "Computed": true
       },
       "host_routes": {
         "Type": "List",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -2108,14 +1964,7 @@
       },
       "no_gateway": {
         "Type": "Bool",
-        "Optional": true,
-        "ConflictsWith": [
-          "gateway_ip"
-        ],
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Optional": true
       },
       "region": {
         "Type": "String",
@@ -2126,88 +1975,94 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
       }
     },
-    "telefonicaopencloud_s3_bucket": {
-      "acl": {
-        "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "private"
-        }
-      },
-      "arn": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "bucket": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "bucket_prefix"
-        ]
-      },
-      "bucket_domain_name": {
-        "Type": "String",
-        "Computed": true
-      },
-      "bucket_prefix": {
-        "Type": "String",
-        "Optional": true
-      },
-      "cors_rule": {
-        "Type": "List",
-        "Optional": true,
+    "huaweicloudstack_networking_vip_associate_v2": {
+      "port_ids": {
+        "Type": "Set",
+        "Required": true,
         "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "allowed_headers": {
-              "Type": "List",
-              "Optional": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "allowed_methods": {
-              "Type": "List",
-              "Required": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "allowed_origins": {
-              "Type": "List",
-              "Required": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "expose_headers": {
-              "Type": "List",
-              "Optional": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "max_age_seconds": {
-              "Type": "Int",
-              "Optional": true
-            }
-          }
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
-      "force_destroy": {
+      "vip_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "vip_ip_address": {
+        "Type": "String",
+        "Computed": true
+      },
+      "vip_subnet_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "huaweicloudstack_networking_vip_v2": {
+      "device_owner": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "subnet_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    }
+  },
+  "data-sources": {
+    "huaweicloudstack_images_image_v2": {
+      "checksum": {
+        "Type": "String",
+        "Computed": true
+      },
+      "container_format": {
+        "Type": "String",
+        "Computed": true
+      },
+      "disk_format": {
+        "Type": "String",
+        "Computed": true
+      },
+      "file": {
+        "Type": "String",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Computed": true
+      },
+      "min_disk_gb": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "min_ram_mb": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "most_recent": {
         "Type": "Bool",
         "Optional": true,
         "Default": {
@@ -2215,465 +2070,69 @@
           "Value": "false"
         }
       },
-      "hosted_zone_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "lifecycle_rule": {
-        "Type": "List",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "abort_incomplete_multipart_upload_days": {
-              "Type": "Int",
-              "Optional": true
-            },
-            "enabled": {
-              "Type": "Bool",
-              "Required": true
-            },
-            "expiration": {
-              "Type": "Set",
-              "Optional": true,
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "date": {
-                    "Type": "String",
-                    "Optional": true
-                  },
-                  "days": {
-                    "Type": "Int",
-                    "Optional": true
-                  },
-                  "expired_object_delete_marker": {
-                    "Type": "Bool",
-                    "Optional": true
-                  }
-                }
-              }
-            },
-            "id": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "noncurrent_version_expiration": {
-              "Type": "Set",
-              "Optional": true,
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "days": {
-                    "Type": "Int",
-                    "Optional": true
-                  }
-                }
-              }
-            },
-            "prefix": {
-              "Type": "String",
-              "Optional": true
-            }
-          }
-        }
-      },
-      "logging": {
-        "Type": "Set",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "target_bucket": {
-              "Type": "String",
-              "Required": true
-            },
-            "target_prefix": {
-              "Type": "String",
-              "Optional": true
-            }
-          }
-        }
-      },
-      "policy": {
+      "name": {
         "Type": "String",
         "Optional": true
+      },
+      "owner": {
+        "Type": "String",
+        "Optional": true
+      },
+      "protected": {
+        "Type": "Bool",
+        "Computed": true
       },
       "region": {
         "Type": "String",
         "Optional": true,
         "Computed": true
       },
-      "tags": {
-        "Type": "Map",
+      "schema": {
+        "Type": "String",
+        "Computed": true
+      },
+      "size_bytes": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "size_max": {
+        "Type": "Int",
         "Optional": true
       },
-      "versioning": {
-        "Type": "List",
-        "Optional": true,
-        "Computed": true,
-        "MaxItems": 1,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "enabled": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
-            "mfa_delete": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            }
-          }
-        }
+      "size_min": {
+        "Type": "Int",
+        "Optional": true
       },
-      "website": {
-        "Type": "List",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "error_document": {
-              "Type": "String",
-              "Optional": true
-            },
-            "index_document": {
-              "Type": "String",
-              "Optional": true
-            },
-            "redirect_all_requests_to": {
-              "Type": "String",
-              "Optional": true,
-              "ConflictsWith": [
-                "website.0.index_document",
-                "website.0.error_document",
-                "website.0.routing_rules"
-              ]
-            },
-            "routing_rules": {
-              "Type": "String",
-              "Optional": true
-            }
-          }
-        }
-      },
-      "website_domain": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "website_endpoint": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      }
-    },
-    "telefonicaopencloud_s3_bucket_object": {
-      "acl": {
+      "sort_direction": {
         "Type": "String",
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "private"
+          "Value": "asc"
         }
       },
-      "bucket": {
-        "Type": "String",
-        "Required": true
-      },
-      "cache_control": {
-        "Type": "String",
-        "Optional": true
-      },
-      "content": {
+      "sort_key": {
         "Type": "String",
         "Optional": true,
-        "ConflictsWith": [
-          "source"
-        ]
-      },
-      "content_disposition": {
-        "Type": "String",
-        "Optional": true
-      },
-      "content_encoding": {
-        "Type": "String",
-        "Optional": true
-      },
-      "content_language": {
-        "Type": "String",
-        "Optional": true
-      },
-      "content_type": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "etag": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "key": {
-        "Type": "String",
-        "Required": true
-      },
-      "server_side_encryption": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "source": {
-        "Type": "String",
-        "Optional": true,
-        "ConflictsWith": [
-          "content"
-        ]
-      },
-      "sse_kms_key_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "version_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "website_redirect": {
-        "Type": "String",
-        "Optional": true
-      }
-    },
-    "telefonicaopencloud_s3_bucket_policy": {
-      "bucket": {
-        "Type": "String",
-        "Required": true
-      },
-      "policy": {
-        "Type": "String",
-        "Required": true
-      }
-    },
-    "telefonicaopencloud_smn_subscription_v2": {
-      "endpoint": {
-        "Type": "String",
-        "Required": true
-      },
-      "owner": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "protocol": {
-        "Type": "String",
-        "Required": true
-      },
-      "remark": {
-        "Type": "String",
-        "Optional": true
-      },
-      "status": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "subscription_urn": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "topic_urn": {
-        "Type": "String",
-        "Required": true
-      }
-    },
-    "telefonicaopencloud_smn_topic_v2": {
-      "create_time": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "display_name": {
-        "Type": "String",
-        "Optional": true
-      },
-      "name": {
-        "Type": "String",
-        "Required": true
-      },
-      "push_policy": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "topic_urn": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "update_time": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      }
-    },
-    "telefonicaopencloud_vpc_eip_v1": {
-      "__timeouts__": [
-        "create",
-        "delete"
-      ],
-      "bandwidth": {
-        "Type": "List",
-        "Required": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "charge_mode": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "name": {
-              "Type": "String",
-              "Required": true
-            },
-            "share_type": {
-              "Type": "String",
-              "Required": true
-            },
-            "size": {
-              "Type": "Int",
-              "Required": true
-            }
-          }
+        "Default": {
+          "Type": "string",
+          "Value": "name"
         }
       },
-      "publicip": {
-        "Type": "List",
-        "Required": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "ip_address": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "port_id": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
-      "region": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "value_specs": {
-        "Type": "Map",
-        "Optional": true
-      }
-    }
-  },
-  "data-sources": {
-    "telefonicaopencloud_dns_zone_v2": {
-      "attributes": {
-        "Type": "Map",
-        "Optional": true,
-        "Computed": true
-      },
-      "created_at": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "description": {
-        "Type": "String",
-        "Optional": true
-      },
-      "email": {
-        "Type": "String",
-        "Optional": true
-      },
-      "masters": {
-        "Type": "Set",
-        "Optional": true,
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
-      },
-      "name": {
-        "Type": "String",
-        "Optional": true
-      },
-      "pool_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "project_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "region": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "serial": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
-      },
-      "status": {
-        "Type": "String",
-        "Optional": true
-      },
-      "transferred_at": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "ttl": {
-        "Type": "Int",
-        "Optional": true
-      },
-      "type": {
+      "tag": {
         "Type": "String",
         "Optional": true
       },
       "updated_at": {
         "Type": "String",
-        "Optional": true,
         "Computed": true
       },
-      "version": {
-        "Type": "Int",
-        "Optional": true,
-        "Computed": true
+      "visibility": {
+        "Type": "String",
+        "Optional": true
       }
     },
-    "telefonicaopencloud_networking_network_v2": {
+    "huaweicloudstack_networking_network_v2": {
       "admin_state_up": {
         "Type": "String",
         "Computed": true
@@ -2699,10 +2158,6 @@
         "Type": "String",
         "Computed": true
       },
-      "status": {
-        "Type": "String",
-        "Optional": true
-      },
       "tenant_id": {
         "Type": "String",
         "Optional": true,
@@ -2710,7 +2165,81 @@
         "DefaultFunc": "MENV(OS_TENANT_ID,OS_PROJECT_ID)"
       }
     },
-    "telefonicaopencloud_networking_secgroup_v2": {
+    "huaweicloudstack_networking_port_v2": {
+      "admin_state_up": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "all_fixed_ips": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "all_security_group_ids": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "device_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "device_owner": {
+        "Type": "String",
+        "Optional": true
+      },
+      "fixed_ip": {
+        "Type": "String",
+        "Optional": true
+      },
+      "mac_address": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "port_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true
+      },
+      "security_group_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "huaweicloudstack_networking_secgroup_v2": {
       "name": {
         "Type": "String",
         "Optional": true
@@ -2730,7 +2259,7 @@
         "Computed": true
       }
     },
-    "telefonicaopencloud_networking_subnet_v2": {
+    "huaweicloudstack_networking_subnet_v2": {
       "allocation_pools": {
         "Type": "List",
         "Computed": true,
@@ -2750,7 +2279,8 @@
       },
       "cidr": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "dhcp_disabled": {
         "Type": "Bool",
@@ -2780,7 +2310,8 @@
       },
       "gateway_ip": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "host_routes": {
         "Type": "List",
@@ -2801,15 +2332,28 @@
       },
       "ip_version": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
+      },
+      "ipv6_address_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "ipv6_ra_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       },
       "name": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "network_id": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "region": {
         "Type": "String",
@@ -2818,92 +2362,15 @@
       },
       "subnet_id": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "tenant_id": {
         "Type": "String",
         "Optional": true,
         "Description": "The ID of the Tenant (Identity v2) or Project (Identity v3)\nto login with.",
+        "Computed": true,
         "DefaultFunc": "MENV(OS_TENANT_ID,OS_PROJECT_ID)"
-      }
-    },
-    "telefonicaopencloud_s3_bucket_object": {
-      "body": {
-        "Type": "String",
-        "Computed": true
-      },
-      "bucket": {
-        "Type": "String",
-        "Required": true
-      },
-      "cache_control": {
-        "Type": "String",
-        "Computed": true
-      },
-      "content_disposition": {
-        "Type": "String",
-        "Computed": true
-      },
-      "content_encoding": {
-        "Type": "String",
-        "Computed": true
-      },
-      "content_language": {
-        "Type": "String",
-        "Computed": true
-      },
-      "content_length": {
-        "Type": "Int",
-        "Computed": true
-      },
-      "content_type": {
-        "Type": "String",
-        "Computed": true
-      },
-      "etag": {
-        "Type": "String",
-        "Computed": true
-      },
-      "expiration": {
-        "Type": "String",
-        "Computed": true
-      },
-      "expires": {
-        "Type": "String",
-        "Computed": true
-      },
-      "key": {
-        "Type": "String",
-        "Required": true
-      },
-      "last_modified": {
-        "Type": "String",
-        "Computed": true
-      },
-      "metadata": {
-        "Type": "Map",
-        "Computed": true
-      },
-      "range": {
-        "Type": "String",
-        "Optional": true
-      },
-      "server_side_encryption": {
-        "Type": "String",
-        "Computed": true
-      },
-      "sse_kms_key_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "version_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "website_redirect_location": {
-        "Type": "String",
-        "Computed": true
       }
     }
   }
